@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  p1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mpc-phe:latest            # имя кешируемого образа
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ./data:/data
+    environment:
+      - RANK=0
+      - WORLD_SIZE=2
+      - MASTER_ADDR=p1
+      - MASTER_PORT=29500
+      - DIST_BACKEND=gloo
+      - NUM_TRIPLES=10
+      - OUT_DIR=/data
+      - PYTHONUNBUFFERED=1
+      - GLOO_SOCKET_IFNAME=eth0
+    command: >
+      python generate_triples.py
+    ports:
+      - "29500:29500"
+
+  p2:
+    image: mpc-phe:latest            # тот же образ, сборка не нужна второй раз
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ./data:/data
+    environment:
+      - RANK=1
+      - WORLD_SIZE=2
+      - MASTER_ADDR=p1
+      - MASTER_PORT=29500
+      - DIST_BACKEND=gloo
+      - NUM_TRIPLES=10
+      - OUT_DIR=/data
+      - PYTHONUNBUFFERED=1
+      - GLOO_SOCKET_IFNAME=eth0
+    command: >
+      python generate_triples.py
+    depends_on:
+      - p1
